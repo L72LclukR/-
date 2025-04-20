@@ -1,0 +1,512 @@
+Roblox UI scripting uses Roblox's GUI system with instances like ScreenGui, Frame, TextLabel, TextButton, Slider (via SliderGui or custom), and ToggleButtons (Checkboxes or ToggleButtons). The HTML/CSS layout and Tailwind styles cannot be directly converted, but I can create a Roblox Luau script that builds a similar UI with the same structure, text, and toggles/sliders.
+
+Here is a Roblox Luau script that creates a ScreenGui with similar UI elements, including volume sliders and toggle switches, styled as close as possible using Roblox UI elements and properties:
+
+```lua
+-- Create a ScreenGui and parent it to PlayerGui
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "SettingsUI"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = playerGui
+
+-- Helper function to create TextLabels
+local function createLabel(parent, text, size, color, font, bold, anchorPoint, position, textXAlignment)
+	local label = Instance.new("TextLabel")
+	label.BackgroundTransparency = 1
+	label.Text = text
+	label.TextColor3 = color or Color3.new(1,1,1)
+	label.Font = font or Enum.Font.GothamBold
+	label.TextSize = size or 18
+	label.TextWrapped = true
+	label.RichText = true
+	label.TextXAlignment = textXAlignment or Enum.TextXAlignment.Left
+	label.AnchorPoint = anchorPoint or Vector2.new(0,0)
+	label.Position = position or UDim2.new(0,0,0,0)
+	label.Parent = parent
+	if bold then
+		label.Font = Enum.Font.GothamBold
+	end
+	return label
+end
+
+-- Helper function to create ImageLabels for icons
+local function createIcon(parent, imageId, size, position)
+	local icon = Instance.new("ImageLabel")
+	icon.BackgroundTransparency = 1
+	icon.Image = imageId
+	icon.Size = size or UDim2.new(0,32,0,32)
+	icon.Position = position or UDim2.new(0,0,0,0)
+	icon.Parent = parent
+	icon.ScaleType = Enum.ScaleType.Fit
+	return icon
+end
+
+-- Helper function to create buttons (for + and -)
+local function createButton(parent, text, size, position)
+	local btn = Instance.new("TextButton")
+	btn.BackgroundColor3 = Color3.new(0,0,0)
+	btn.BackgroundTransparency = 0.7
+	btn.BorderSizePixel = 0
+	btn.Text = text
+	btn.TextColor3 = Color3.new(1,1,1)
+	btn.Font = Enum.Font.GothamBold
+	btn.TextSize = size or 24
+	btn.Size = UDim2.new(0,32,0,32)
+	btn.Position = position or UDim2.new(0,0,0,0)
+	btn.Parent = parent
+	return btn
+end
+
+-- Helper function to create toggle switches
+local function createToggle(parent, position, initialState)
+	local toggleFrame = Instance.new("Frame")
+	toggleFrame.Size = UDim2.new(0,56,0,32)
+	toggleFrame.Position = position
+	toggleFrame.BackgroundColor3 = initialState and Color3.fromRGB(118, 255, 3) or Color3.fromRGB(55, 65, 81) -- lime or gray
+	toggleFrame.BorderSizePixel = 0
+	toggleFrame.AnchorPoint = Vector2.new(0,0)
+	toggleFrame.Parent = parent
+	toggleFrame.Name = "ToggleSwitch"
+	toggleFrame.ClipsDescendants = true
+	toggleFrame.AutomaticSize = Enum.AutomaticSize.None
+	toggleFrame.BackgroundTransparency = 0
+
+	local circle = Instance.new("Frame")
+	circle.Name = "Circle"
+	circle.Size = UDim2.new(0,24,0,24)
+	circle.Position = initialState and UDim2.new(1, -28, 0, 4) or UDim2.new(0, 4, 0, 4)
+	circle.BackgroundColor3 = Color3.fromRGB(0,0,0)
+	circle.BorderSizePixel = 0
+	circle.Parent = toggleFrame
+	circle.AnchorPoint = Vector2.new(0,0)
+	circle.ClipsDescendants = true
+	circle.AutomaticSize = Enum.AutomaticSize.None
+	circle.BackgroundTransparency = 0
+	circle.ZIndex = 2
+	circle.Name = "Circle"
+
+	circle.ClipsDescendants = true
+	circle.AutomaticSize = Enum.AutomaticSize.None
+	circle.BackgroundTransparency = 0
+	circle.ZIndex = 2
+	circle.Name = "Circle"
+	circle.AnchorPoint = Vector2.new(0,0)
+	circle.Position = initialState and UDim2.new(1, -28, 0, 4) or UDim2.new(0, 4, 0, 4)
+	circle.BackgroundColor3 = Color3.new(0,0,0)
+	circle.BorderSizePixel = 0
+	circle.Parent = toggleFrame
+	circle.ZIndex = 2
+	circle.Name = "Circle"
+	circle.AnchorPoint = Vector2.new(0,0)
+	circle.Position = initialState and UDim2.new(1, -28, 0, 4) or UDim2.new(0, 4, 0, 4)
+	circle.BackgroundColor3 = Color3.new(0,0,0)
+	circle.BorderSizePixel = 0
+	circle.Parent = toggleFrame
+
+	-- Toggle function
+	local toggled = initialState
+	toggleFrame.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			toggled = not toggled
+			if toggled then
+				toggleFrame.BackgroundColor3 = Color3.fromRGB(118, 255, 3)
+				circle:TweenPosition(UDim2.new(1, -28, 0, 4), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.2, true)
+			else
+				toggleFrame.BackgroundColor3 = Color3.fromRGB(55, 65, 81)
+				circle:TweenPosition(UDim2.new(0, 4, 0, 4), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.2, true)
+			end
+		end
+	end)
+
+	return toggleFrame
+end
+
+-- Helper function to create sliders
+local function createSlider(parent, position, initialValue)
+	local sliderFrame = Instance.new("Frame")
+	sliderFrame.Size = UDim2.new(1, 0, 0, 32)
+	sliderFrame.Position = position
+	sliderFrame.BackgroundTransparency = 1
+	sliderFrame.Parent = parent
+
+	local sliderBar = Instance.new("Frame")
+	sliderBar.Size = UDim2.new(1, -64, 0, 8)
+	sliderBar.Position = UDim2.new(0, 32, 0, 12)
+	sliderBar.BackgroundColor3 = Color3.fromRGB(55, 65, 81)
+	sliderBar.BorderSizePixel = 0
+	sliderBar.AnchorPoint = Vector2.new(0, 0)
+	sliderBar.Parent = sliderFrame
+	sliderBar.Name = "SliderBar"
+	sliderBar.ClipsDescendants = true
+	sliderBar.AutomaticSize = Enum.AutomaticSize.None
+	sliderBar.BackgroundTransparency = 0
+	sliderBar.ZIndex = 1
+	sliderBar.AnchorPoint = Vector2.new(0, 0)
+
+	local fill = Instance.new("Frame")
+	fill.Name = "Fill"
+	fill.Size = UDim2.new(initialValue, 0, 1, 0)
+	fill.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	fill.BorderSizePixel = 0
+	fill.Parent = sliderBar
+
+	local thumb = Instance.new("ImageButton")
+	thumb.Name = "Thumb"
+	thumb.Size = UDim2.new(0, 24, 0, 24)
+	thumb.Position = UDim2.new(initialValue, -12, 0, -8)
+	thumb.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	thumb.BorderSizePixel = 0
+	thumb.Parent = sliderBar
+	thumb.AutoButtonColor = false
+	thumb.ZIndex = 2
+	thumb.Image = ""
+	thumb.BackgroundTransparency = 0
+	thumb.AnchorPoint = Vector2.new(0.5, 0.5)
+	thumb.Position = UDim2.new(initialValue, 0, 0.5, 0)
+	thumb.BackgroundColor3 = Color3.new(1,1,1)
+	thumb.BorderSizePixel = 0
+	thumb.Parent = sliderBar
+
+	-- Drag logic
+	local UserInputService = game:GetService("UserInputService")
+	local dragging = false
+
+	local function updateSlider(inputPosX)
+		local relativeX = math.clamp(inputPosX - sliderBar.AbsolutePosition.X, 0, sliderBar.AbsoluteSize.X)
+		local value = relativeX / sliderBar.AbsoluteSize.X
+		fill.Size = UDim2.new(value, 0, 1, 0)
+		thumb.Position = UDim2.new(value, 0, 0.5, 0)
+		return value
+	end
+
+	thumb.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = true
+		end
+	end)
+
+	thumb.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = false
+		end
+	end)
+
+	UserInputService.InputChanged:Connect(function(input)
+		if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+			local newValue = updateSlider(input.Position.X)
+		end
+	end)
+
+	return sliderFrame
+end
+
+-- Main container frame
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 360, 0, 700)
+mainFrame.Position = UDim2.new(0.5, -180, 0.5, -350)
+mainFrame.BackgroundColor3 = Color3.new(0,0,0)
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = screenGui
+
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Padding = UDim.new(0, 24)
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Parent = mainFrame
+
+-- Music Volume Section
+local musicVolumeFrame = Instance.new("Frame")
+musicVolumeFrame.Size = UDim2.new(1, 0, 0, 100)
+musicVolumeFrame.BackgroundTransparency = 1
+musicVolumeFrame.Parent = mainFrame
+
+local musicHeader = Instance.new("Frame")
+musicHeader.Size = UDim2.new(1, 0, 0, 32)
+musicHeader.BackgroundTransparency = 1
+musicHeader.Parent = musicVolumeFrame
+
+local musicIcon = Instance.new("ImageLabel")
+musicIcon.Size = UDim2.new(0, 28, 0, 28)
+musicIcon.Position = UDim2.new(0, 0, 0, 2)
+musicIcon.BackgroundTransparency = 1
+musicIcon.Image = "rbxassetid://6031094673" -- volume up icon (replace with your own)
+musicIcon.Parent = musicHeader
+
+local musicTitle = createLabel(musicHeader, "Music Volume", 22, Color3.new(1,1,1), Enum.Font.GothamBold, true, Vector2.new(0,0), UDim2.new(0, 36, 0, 0))
+musicTitle.Size = UDim2.new(0, 200, 0, 32)
+
+local musicSub = createLabel(musicVolumeFrame, "Music made by @BSlickMusic", 14, Color3.fromRGB(128,128,128), Enum.Font.Gotham, false, Vector2.new(0,0), UDim2.new(0, 36, 0, 32))
+
+local musicControls = Instance.new("Frame")
+musicControls.Size = UDim2.new(1, 0, 0, 40)
+musicControls.Position = UDim2.new(0, 0, 0, 56)
+musicControls.BackgroundTransparency = 1
+musicControls.Parent = musicVolumeFrame
+
+local minusBtn1 = createButton(musicControls, "-", 28, UDim2.new(0, 0, 0, 4))
+minusBtn1.Size = UDim2.new(0, 32, 0, 32)
+minusBtn1.Position = UDim2.new(0, 0, 0, 4)
+
+local plusBtn1 = createButton(musicControls, "+", 28, UDim2.new(1, -32, 0, 4))
+
+local musicSlider = createSlider(musicControls, UDim2.new(0, 40, 0, 8), 0.5)
+musicSlider.Size = UDim2.new(1, -96, 0, 32)
+musicSlider.Position = UDim2.new(0, 40, 0, 4)
+musicSlider.Parent = musicControls
+
+local musicValue = Instance.new("TextLabel")
+musicValue.Size = UDim2.new(0, 48, 0, 32)
+musicValue.Position = UDim2.new(1, -80, 0, 4)
+musicValue.BackgroundColor3 = Color3.new(1,1,1)
+musicValue.TextColor3 = Color3.new(0,0,0)
+musicValue.Font = Enum.Font.GothamBold
+musicValue.TextSize = 18
+musicValue.Text = "0.5"
+musicValue.TextWrapped = false
+musicValue.Parent = musicControls
+musicValue.TextXAlignment = Enum.TextXAlignment.Center
+musicValue.ClipsDescendants = true
+musicValue.AnchorPoint = Vector2.new(0,0)
+
+-- Connect slider to update value label
+local sliderBar = musicSlider:FindFirstChild("SliderBar")
+local fill = sliderBar and sliderBar:FindFirstChild("Fill")
+local thumb = sliderBar and sliderBar:FindFirstChild("Thumb")
+
+if thumb and fill then
+	thumb.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			local dragging = true
+			local UserInputService = game:GetService("UserInputService")
+			local function onInputChanged(input2)
+				if dragging and input2.UserInputType == Enum.UserInputType.MouseMovement then
+					local relativeX = math.clamp(input2.Position.X - sliderBar.AbsolutePosition.X, 0, sliderBar.AbsoluteSize.X)
+					local value = relativeX / sliderBar.AbsoluteSize.X
+					fill.Size = UDim2.new(value, 0, 1, 0)
+					thumb.Position = UDim2.new(value, 0, 0.5, 0)
+					musicValue.Text = string.format("%.2f", value)
+				end
+			end
+			local function onInputEnded(input3)
+				if input3.UserInputType == Enum.UserInputType.MouseButton1 then
+					dragging = false
+					UserInputService.InputChanged:Disconnect(onInputChanged)
+					UserInputService.InputEnded:Disconnect(onInputEnded)
+				end
+			end
+			UserInputService.InputChanged:Connect(onInputChanged)
+			UserInputService.InputEnded:Connect(onInputEnded)
+		end
+	end)
+end
+
+-- Finisher Volume Section (similar to Music Volume)
+local finisherVolumeFrame = Instance.new("Frame")
+finisherVolumeFrame.Size = UDim2.new(1, 0, 0, 100)
+finisherVolumeFrame.BackgroundTransparency = 1
+finisherVolumeFrame.Parent = mainFrame
+
+local finisherHeader = Instance.new("Frame")
+finisherHeader.Size = UDim2.new(1, 0, 0, 32)
+finisherHeader.BackgroundTransparency = 1
+finisherHeader.Parent = finisherVolumeFrame
+
+local finisherIcon = Instance.new("ImageLabel")
+finisherIcon.Size = UDim2.new(0, 28, 0, 28)
+finisherIcon.Position = UDim2.new(0, 0, 0, 2)
+finisherIcon.BackgroundTransparency = 1
+finisherIcon.Image = "rbxassetid://6031094673" -- volume up icon (replace with your own)
+finisherIcon.Parent = finisherHeader
+
+local finisherTitle = createLabel(finisherHeader, "Finisher Volume", 22, Color3.new(1,1,1), Enum.Font.GothamBold, true, Vector2.new(0,0), UDim2.new(0, 36, 0, 0))
+finisherTitle.Size = UDim2.new(0, 200, 0, 32)
+
+local finisherSub = createLabel(finisherVolumeFrame, "Changes the volume of finishers effects", 14, Color3.fromRGB(128,128,128), Enum.Font.Gotham, false, Vector2.new(0,0), UDim2.new(0, 36, 0, 32))
+
+local finisherControls = Instance.new("Frame")
+finisherControls.Size = UDim2.new(1, 0, 0, 40)
+finisherControls.Position = UDim2.new(0, 0, 0, 56)
+finisherControls.BackgroundTransparency = 1
+finisherControls.Parent = finisherVolumeFrame
+
+local minusBtn2 = createButton(finisherControls, "-", 28, UDim2.new(0, 0, 0, 4))
+minusBtn2.Size = UDim2.new(0, 32, 0, 32)
+minusBtn2.Position = UDim2.new(0, 0, 0, 4)
+
+local plusBtn2 = createButton(finisherControls, "+", 28, UDim2.new(1, -32, 0, 4))
+
+local finisherSlider = createSlider(finisherControls, UDim2.new(0, 40, 0, 8), 0.5)
+finisherSlider.Size = UDim2.new(1, -96, 0, 32)
+finisherSlider.Position = UDim2.new(0, 40, 0, 4)
+finisherSlider.Parent = finisherControls
+
+local finisherValue = Instance.new("TextLabel")
+finisherValue.Size = UDim2.new(0, 48, 0, 32)
+finisherValue.Position = UDim2.new(1, -80, 0, 4)
+finisherValue.BackgroundColor3 = Color3.new(1,1,1)
+finisherValue.TextColor3 = Color3.new(0,0,0)
+finisherValue.Font = Enum.Font.GothamBold
+finisherValue.TextSize = 18
+finisherValue.Text = "0.5"
+finisherValue.TextWrapped = false
+finisherValue.Parent = finisherControls
+finisherValue.TextXAlignment = Enum.TextXAlignment.Center
+finisherValue.ClipsDescendants = true
+finisherValue.AnchorPoint = Vector2.new(0,0)
+
+-- Connect slider to update value label for finisher volume
+local sliderBar2 = finisherSlider:FindFirstChild("SliderBar")
+local fill2 = sliderBar2 and sliderBar2:FindFirstChild("Fill")
+local thumb2 = sliderBar2 and sliderBar2:FindFirstChild("Thumb")
+
+if thumb2 and fill2 then
+	thumb2.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			local dragging = true
+			local UserInputService = game:GetService("UserInputService")
+			local function onInputChanged(input2)
+				if dragging and input2.UserInputType == Enum.UserInputType.MouseMovement then
+					local relativeX = math.clamp(input2.Position.X - sliderBar2.AbsolutePosition.X, 0, sliderBar2.AbsoluteSize.X)
+					local value = relativeX / sliderBar2.AbsoluteSize.X
+					fill2.Size = UDim2.new(value, 0, 1, 0)
+					thumb2.Position = UDim2.new(value, 0, 0.5, 0)
+					finisherValue.Text = string.format("%.2f", value)
+				end
+			end
+			local function onInputEnded(input3)
+				if input3.UserInputType == Enum.UserInputType.MouseButton1 then
+					dragging = false
+					UserInputService.InputChanged:Disconnect(onInputChanged)
+					UserInputService.InputEnded:Disconnect(onInputEnded)
+				end
+			end
+			UserInputService.InputChanged:Connect(onInputChanged)
+			UserInputService.InputEnded:Connect(onInputEnded)
+		end
+	end)
+end
+
+-- Toggles Section
+local toggles = {
+	{icon = "rbxassetid://6031094680", title = "Toggle Aim", subtitle = "Always on for mobile devices", initial = false},
+	{icon = "rbxassetid://6031094681", title = "Toggle Crouch", subtitle = "Always on for mobile devices", initial = false},
+	{icon = "rbxassetid://6031094682", title = "Toggle Sprint", subtitle = "Not available for mobile devices", initial = false},
+	{icon = "rbxassetid://6031094683", title = "Auto Sprint", subtitle = "Always on for mobile devices", initial = true},
+	{icon = "rbxassetid://6031094684", title = "Easy Slide", subtitle = "Allows you to Slide by Crouching while Sprinting", initial = true},
+	{icon = "rbxassetid://6031094685", title = "Scroll Equip", subtitle = "Allows you to use your mouse wheel to equip weapons", initial = true},
+}
+
+for i, toggleInfo in ipairs(toggles) do
+	local toggleFrame = Instance.new("Frame")
+	toggleFrame.Size = UDim2.new(1, 0, 0, 56)
+	toggleFrame.BackgroundTransparency = 1
+	toggleFrame.LayoutOrder = i + 2
+	toggleFrame.Parent = mainFrame
+
+	local icon = Instance.new("ImageLabel")
+	icon.Size = UDim2.new(0, 32, 0, 32)
+	icon.Position = UDim2.new(0, 0, 0, 12)
+	icon.BackgroundTransparency = 1
+	icon.Image = toggleInfo.icon
+	icon.Parent = toggleFrame
+
+	local textFrame = Instance.new("Frame")
+	textFrame.Size = UDim2.new(0.7, 0, 1, 0)
+	textFrame.Position = UDim2.new(0, 40, 0, 0)
+	textFrame.BackgroundTransparency = 1
+	textFrame.Parent = toggleFrame
+
+	local titleLabel = createLabel(textFrame, toggleInfo.title, 20, Color3.new(1,1,1), Enum.Font.GothamBold, true, Vector2.new(0,0), UDim2.new(0, 0, 0, 4))
+	titleLabel.Size = UDim2.new(1, 0, 0, 24)
+
+	local subLabel = createLabel(textFrame, toggleInfo.subtitle, 14, Color3.fromRGB(128,128,128), Enum.Font.Gotham, false, Vector2.new(0,0), UDim2.new(0, 0, 0, 28))
+
+	local toggleSwitch = createToggle(toggleFrame, UDim2.new(1, -64, 0, 12), toggleInfo.initial)
+	toggleSwitch.AnchorPoint = Vector2.new(0,0)
+end
+
+-- Auto Shoot Mode with dropdown
+local autoShootFrame = Instance.new("Frame")
+autoShootFrame.Size = UDim2.new(1, 0, 0, 56)
+autoShootFrame.BackgroundTransparency = 1
+autoShootFrame.LayoutOrder = #toggles + 3
+autoShootFrame.Parent = mainFrame
+
+local autoShootIcon = Instance.new("ImageLabel")
+autoShootIcon.Size = UDim2.new(0, 32, 0, 32)
+autoShootIcon.Position = UDim2.new(0, 0, 0, 12)
+autoShootIcon.BackgroundTransparency = 1
+autoShootIcon.Image = "rbxassetid://6031094686" -- bird icon placeholder
+autoShootIcon.Parent = autoShootFrame
+
+local autoShootTextFrame = Instance.new("Frame")
+autoShootTextFrame.Size = UDim2.new(0.7, 0, 1, 0)
+autoShootTextFrame.Position = UDim2.new(0, 40, 0, 0)
+autoShootTextFrame.BackgroundTransparency = 1
+autoShootTextFrame.Parent = autoShootFrame
+
+local autoShootTitle = createLabel(autoShootTextFrame, "Auto Shoot Mode", 20, Color3.new(1,1,1), Enum.Font.GothamBold, true, Vector2.new(0,0), UDim2.new(0, 0, 0, 4))
+autoShootTitle.Size = UDim2.new(1, 0, 0, 24)
+
+local autoShootSub = createLabel(autoShootTextFrame, "Not available for mouse & keyboard", 14, Color3.fromRGB(128,128,128), Enum.Font.Gotham, false, Vector2.new(0,0), UDim2.new(0, 0, 0, 28))
+
+local dropdown = Instance.new("TextButton")
+dropdown.Size = UDim2.new(0, 120, 0, 32)
+dropdown.Position = UDim2.new(1, -130, 0, 12)
+dropdown.BackgroundColor3 = Color3.new(1,1,1)
+dropdown.TextColor3 = Color3.new(0,0,0)
+dropdown.Font = Enum.Font.GothamBold
+dropdown.TextSize = 18
+dropdown.Text = "Custom ▼"
+dropdown.Parent = autoShootFrame
+dropdown.AutoButtonColor = true
+
+-- Auto Shoot Reaction Time with value box
+local autoShootTimeFrame = Instance.new("Frame")
+autoShootTimeFrame.Size = UDim2.new(1, 0, 0, 56)
+autoShootTimeFrame.BackgroundTransparency = 1
+autoShootTimeFrame.LayoutOrder = #toggles + 4
+autoShootTimeFrame.Parent = mainFrame
+
+local autoShootTimeIcon = Instance.new("ImageLabel")
+autoShootTimeIcon.Size = UDim2.new(0, 32, 0, 32)
+autoShootTimeIcon.Position = UDim2.new(0, 0, 0, 12)
+autoShootTimeIcon.BackgroundTransparency = 1
+autoShootTimeIcon.Image = "rbxassetid://6031094687" -- bird icon placeholder
+autoShootTimeIcon.Parent = autoShootTimeFrame
+
+local autoShootTimeTextFrame = Instance.new("Frame")
+autoShootTimeTextFrame.Size = UDim2.new(0.7, 0, 1, 0)
+autoShootTimeTextFrame.Position = UDim2.new(0, 40, 0, 0)
+autoShootTimeTextFrame.BackgroundTransparency = 1
+autoShootTimeTextFrame.Parent = autoShootTimeFrame
+
+local autoShootTimeTitle = createLabel(autoShootTimeTextFrame, "Auto Shoot Reaction Time", 20, Color3.new(1,1,1), Enum.Font.GothamBold, true, Vector2.new(0,0), UDim2.new(0, 0, 0, 4))
+autoShootTimeTitle.Size = UDim2.new(1, 0, 0, 24)
+
+local autoShootTimeSub = createLabel(autoShootTimeTextFrame, "Your autoshoot delay in milliseconds", 14, Color3.fromRGB(128,128,128), Enum.Font.Gotham, false, Vector2.new(0,0), UDim2.new(0, 0, 0, 28))
+
+local timeValue = Instance.new("TextLabel")
+timeValue.Size = UDim2.new(0, 48, 0, 32)
+timeValue.Position = UDim2.new(1, -80, 0, 12)
+timeValue.BackgroundColor3 = Color3.new(1,1,1)
+timeValue.TextColor3 = Color3.new(0,0,0)
+timeValue.Font = Enum.Font.GothamBold
+timeValue.TextSize = 18
+timeValue.Text = "25"
+timeValue.TextWrapped = false
+timeValue.Parent = autoShootTimeFrame
+timeValue.TextXAlignment = Enum.TextXAlignment.Center
+timeValue.ClipsDescendants = true
+timeValue.AnchorPoint = Vector2.new(0,0)
+
+-- The script creates a UI similar in structure and text to the provided screenshot.
+-- You can replace the Image asset IDs with your own icons for better matching.
+```
+
+This script creates a ScreenGui with the same sections, text, toggles, and sliders. The toggles are clickable and change color and position of the toggle circle. The sliders can be dragged to update the value label. The dropdown is a simple TextButton with "Custom ▼" text.
+
+You can paste this script into a LocalScript inside StarterPlayerScripts or StarterGui to test it in Roblox Studio. Replace the placeholder image asset IDs with your own icons for exact matching.
