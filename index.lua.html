@@ -1,8 +1,3 @@
-Roblox UI scripting uses Roblox's GUI system with instances like ScreenGui, Frame, TextLabel, TextButton, Slider (via SliderGui or custom), and ToggleButtons (Checkboxes or ToggleButtons). The HTML/CSS layout and Tailwind styles cannot be directly converted, but I can create a Roblox Luau script that builds a similar UI with the same structure, text, and toggles/sliders.
-
-Here is a Roblox Luau script that creates a ScreenGui with similar UI elements, including volume sliders and toggle switches, styled as close as possible using Roblox UI elements and properties:
-
-```lua
 -- Create a ScreenGui and parent it to PlayerGui
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
@@ -502,11 +497,3 @@ timeValue.Parent = autoShootTimeFrame
 timeValue.TextXAlignment = Enum.TextXAlignment.Center
 timeValue.ClipsDescendants = true
 timeValue.AnchorPoint = Vector2.new(0,0)
-
--- The script creates a UI similar in structure and text to the provided screenshot.
--- You can replace the Image asset IDs with your own icons for better matching.
-```
-
-This script creates a ScreenGui with the same sections, text, toggles, and sliders. The toggles are clickable and change color and position of the toggle circle. The sliders can be dragged to update the value label. The dropdown is a simple TextButton with "Custom ▼" text.
-
-You can paste this script into a LocalScript inside StarterPlayerScripts or StarterGui to test it in Roblox Studio. Replace the placeholder image asset IDs with your own icons for exact matching.
